@@ -20,15 +20,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final psqi = PsqiCalculator.calculate(widget.user);
+    final rawPsqi = PsqiCalculator.calculate(widget.user);
+    final psqi = rawPsqi.clamp(0, 21);
 
     final List<String> riskFactors = [];
 
     if (widget.user.family <= 5) {
-      riskFactors.add('ความสัมพันธ์ในครอบครัวอาจมีผลลบต่อการนอน');
+      riskFactors.add('ความสัมพันธ์ในครอบครัวอาจมีผลต่อการนอน');
     }
     if (widget.user.exercise < 2)
-      riskFactors.add('ออกกำลังกายน้อย อาจทำให้นอนแย่');
+      riskFactors.add('ออกกำลังกายน้อย อาจส่งผลต่อการนอน');
     if (widget.user.caffeine >= 0.4)
       riskFactors.add('ดื่มคาเฟอีนเยอะ อาจรบกวนการนอน');
     if (widget.user.activityCount >= 8) {
@@ -38,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
       riskFactors.add('มีความสัมพันธ์กับเพื่อนต่ำ อาจเสี่ยงเครียด');
     }
     if (widget.user.gpax < 2.75)
-      riskFactors.add('GPAX ต่ำ อาจส่งผลต่อคุณภาพการนอน');
+      riskFactors.add('GPAX ต่ำอาจส่งผลต่อคุณภาพการนอน');
 
     return Scaffold(
       appBar: AppBar(
@@ -78,14 +79,22 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(height: 12),
             _buildCard(
-              title: 'ชีพจรของวันนี้ (Mock Data):',
-              child: Text('72, 74, 73, 71, 70, 69, 68, 70'),
+              title: 'ชีพจรของวันนี้:',
+              child: Consumer<PulseUsbService>(
+                builder: (context, pulseService, _) {
+                  final pulses = pulseService.pulses;
+                  if (pulses.isEmpty) {
+                    return Text('ยังไม่มีข้อมูลชีพจร');
+                  }
+                  return Text(pulses.join(', '));
+                },
+              ),
             ),
             SizedBox(height: 12),
             _buildCard(
               title: 'ปัจจัยเสี่ยงที่ควรระวัง:',
               child: riskFactors.isEmpty
-                  ? Text('ไม่มี 🎉 คุณไม่มีปัจจัยเสี่ยงที่ต้องระวัง')
+                  ? Text('- คุณไม่มีปัจจัยเสี่ยงที่ต้องระวัง')
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: riskFactors
@@ -118,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() => isSaving = false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                            content: Text('✅ บันทึกชีพจรทั้งวันเรียบร้อยแล้ว')),
+                            content: Text('บันทึกชีพจรวันนี้เรียบร้อยแล้ว')),
                       );
                     },
               child: isSaving
