@@ -5,6 +5,7 @@ import '../services/psqi_calculator.dart';
 import 'dashboard_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pulseleep/services/pulse_usb_service.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserResponse user;
@@ -26,10 +27,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final List<String> riskFactors = [];
 
     if (widget.user.family <= 5) {
-      riskFactors.add('ความสัมพันธ์ในครอบครัวอาจมีผลต่อการนอน');
+      riskFactors.add('ความสัมพันธ์ในครอบครัวอาจมีผลลบต่อการนอน');
     }
     if (widget.user.exercise < 2)
-      riskFactors.add('ออกกำลังกายน้อย อาจส่งผลต่อการนอน');
+      riskFactors.add('ออกกำลังกายน้อย อาจทำให้นอนแย่');
     if (widget.user.caffeine >= 0.4)
       riskFactors.add('ดื่มคาเฟอีนเยอะ อาจรบกวนการนอน');
     if (widget.user.activityCount >= 8) {
@@ -39,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       riskFactors.add('มีความสัมพันธ์กับเพื่อนต่ำ อาจเสี่ยงเครียด');
     }
     if (widget.user.gpax < 2.75)
-      riskFactors.add('GPAX ต่ำอาจส่งผลต่อคุณภาพการนอน');
+      riskFactors.add('GPAX ต่ำ อาจส่งผลต่อคุณภาพการนอน');
 
     return Scaffold(
       appBar: AppBar(
@@ -86,7 +87,50 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (pulses.isEmpty) {
                     return Text('ยังไม่มีข้อมูลชีพจร');
                   }
-                  return Text(pulses.join(', '));
+                  return SizedBox(
+                    height: 200,
+                    child: LineChart(
+                      LineChartData(
+                        gridData: FlGridData(show: true),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles:
+                                SideTitles(showTitles: true, reservedSize: 40),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 32,
+                              getTitlesWidget: (value, meta) {
+                                final minute = (value * 30).toInt();
+                                return Text("${minute}m",
+                                    style: TextStyle(fontSize: 10));
+                              },
+                            ),
+                          ),
+                          topTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                        ),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: pulses
+                                .asMap()
+                                .entries
+                                .map((e) => FlSpot(
+                                    e.key.toDouble(), e.value.toDouble()))
+                                .toList(),
+                            isCurved: true,
+                            color: Colors.deepPurple,
+                            barWidth: 2,
+                            dotData: FlDotData(show: false),
+                          )
+                        ],
+                      ),
+                    ),
+                  );
                 },
               ),
             ),
@@ -94,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildCard(
               title: 'ปัจจัยเสี่ยงที่ควรระวัง:',
               child: riskFactors.isEmpty
-                  ? Text('- คุณไม่มีปัจจัยเสี่ยงที่ต้องระวัง')
+                  ? Text('ไม่มี 🎉 คุณไม่มีปัจจัยเสี่ยงที่ต้องระวัง')
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: riskFactors
@@ -127,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() => isSaving = false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                            content: Text('บันทึกชีพจรวันนี้เรียบร้อยแล้ว')),
+                            content: Text('✅ บันทึกชีพจรทั้งวันเรียบร้อยแล้ว')),
                       );
                     },
               child: isSaving
