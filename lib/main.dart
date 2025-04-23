@@ -6,21 +6,24 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'models/session.dart';
 import 'package:provider/provider.dart';
 import 'services/pulse_usb_service.dart';
+import 'models/daily_session.dart';
 
 void main() async {
-  // ✅ กำหนดให้ Flutter รอเปิด Hive ก่อน runApp
+  //  กำหนดให้ Flutter รอเปิด Hive ก่อน runApp
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ เปิด Hive
+  //  เปิด Hive
   await Hive.initFlutter();
 
-  // ✅ บอก Hive ให้รู้จักคลาส Session
+  //  บอก Hive ให้รู้จักคลาส Session
   Hive.registerAdapter(SessionAdapter());
 
-  // ✅ เปิดกล่อง (box) ที่ชื่อ 'sessions'
+  //  เปิดกล่อง (box) ที่ชื่อ 'sessions'
   await Hive.openBox<Session>('sessions');
 
-  // ✅ เริ่มแอป
+  await Hive.openBox<DailySession>('daily_sessions');
+
+  //  เริ่มแอป
   runApp(
     MultiProvider(
       providers: [
@@ -42,7 +45,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.deepPurple,
       ),
       home: Builder(
-        // ✅ ใช้ Builder เพื่อให้ได้ context ที่ชัวร์
+        //  ใช้ Builder เพื่อให้ได้ context ที่ชัวร์
         builder: (context) {
           return QuestionScreen(
             onSubmit: (UserResponse user) {
