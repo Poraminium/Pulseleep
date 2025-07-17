@@ -12,4 +12,22 @@ class UserResponse {
   double gpax = 0.0;
 
   UserResponse();
+
+  List<double> toInputList() {
+      return [
+        age.toDouble(),
+        gender.toDouble(),
+        bmi,
+        family,
+        exercise,
+        caffeine,
+        activityCount.toDouble(),
+        friend,
+        hasBF ? 1.0 : 0.0,  // แปลง bool เป็น 1.0 หรือ 0.0
+        gpax,
+      ];
+    }
 }
+
+
+

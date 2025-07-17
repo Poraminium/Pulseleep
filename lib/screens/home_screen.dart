@@ -18,30 +18,73 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool isSaving = false;
+  final aiCalc = Ai_calculator();
+  double? aiResult; // เก็บผลลัพธ์ของโมเดล
+
+  @override
+  void initState() {
+    super.initState();
+    aiCalc.loadModel(); // โหลดโมเดลตอนหน้าเพิ่งสร้าง
+    _runAi();
+  }
+
+  @override
+  void dispose() {
+    aiCalc.close();
+    super.dispose();
+  }
+
+Future<void> _runAi() async {
+  print('เริ่มประมวลผล AI');
+  await aiCalc.loadModel();
+  print('โหลดโมเดลเสร็จ');
+  double result = await aiCalc.predict(widget.user);
+  print('ได้ผลลัพธ์จาก AI: $result');
+  setState(() {
+    aiResult = result;
+    print('setState เรียกแล้ว');
+  });
+}
 
   @override
   Widget build(BuildContext context) {
     final rawPsqi = PsqiCalculator.calculate(widget.user);
     final psqi = rawPsqi.clamp(0, 21);
+    String sleepQualityText = 'กำลังประมวลผล...';
+
+    if (aiResult != null) {
+        double value = aiResult!;
+        if (value == 0 ) {
+          sleepQualityText = 'นอนดี';
+        } else if (value == 1 ) {
+          sleepQualityText = 'นอนปานกลาง';
+        } else if (value == 2 ) {
+          sleepQualityText = 'นอนแย่';
+        } else {
+          sleepQualityText = 'ค่าอยู่นอกช่วงที่กำหนด';
+        }
+      }
 
     final List<String> riskFactors = [];
 
     if (widget.user.family <= 5) {
       riskFactors.add('ความสัมพันธ์ในครอบครัวอาจมีผลลบต่อการนอน');
     }
-    if (widget.user.exercise < 2)
+    if (widget.user.exercise < 2) {
       riskFactors.add('ออกกำลังกายน้อย อาจทำให้นอนแย่');
-    if (widget.user.caffeine >= 0.4)
+    }
+    if (widget.user.caffeine >= 0.4) {
       riskFactors.add('ดื่มคาเฟอีนเยอะ อาจรบกวนการนอน');
+    }
     if (widget.user.activityCount >= 8) {
       riskFactors.add('มีกิจกรรมเยอะ อาจทำให้นอนไม่เพียงพอ');
     }
     if (widget.user.friend < 6) {
-      riskFactors.add('มีความสัมพันธ์กับเพื่อนต่ำ อาจเสี่ยงเครียด');
+      riskFactors.add('มีความสัมพันธ์กับเพื่อนต่ำ อาจเสี่ยงเครียดส่งผลต่อการนอน');
     }
-    if (widget.user.gpax < 2.75)
+    if (widget.user.gpax < 2.75) {
       riskFactors.add('GPAX ต่ำ อาจส่งผลต่อคุณภาพการนอน');
-
+    }
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.deepPurple,
@@ -78,6 +121,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+            SizedBox(height: 12),
+            Card(
+              color: Color(0xFFF3E5F5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: Text(
+                    sleepQualityText,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+            
+
             SizedBox(height: 12),
             _buildCard(
               title: 'ชีพจรของวันนี้:',
@@ -138,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildCard(
               title: 'ปัจจัยเสี่ยงที่ควรระวัง:',
               child: riskFactors.isEmpty
-                  ? Text('ไม่มี 🎉 คุณไม่มีปัจจัยเสี่ยงที่ต้องระวัง')
+                  ? Text('ไม่มีคุณไม่มีปัจจัยเสี่ยงที่ต้องระวัง')
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: riskFactors
@@ -171,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() => isSaving = false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                            content: Text('✅ บันทึกชีพจรทั้งวันเรียบร้อยแล้ว')),
+                            content: Text('บันทึกชีพจรทั้งวันเรียบร้อยแล้ว')),
                       );
                     },
               child: isSaving

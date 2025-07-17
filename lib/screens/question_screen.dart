@@ -101,7 +101,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
                             _activities.values.where((v) => v).length;
                       }),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
               _buildSection(

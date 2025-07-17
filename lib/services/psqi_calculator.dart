@@ -1,5 +1,6 @@
 // lib/services/psqi_calculator.dart
 import '../models/user_response.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
 
 class PsqiCalculator {
   static double calculate(UserResponse user) {
@@ -17,5 +18,42 @@ class PsqiCalculator {
         0.031 * user.friend -
         0.087 * bf -
         0.985 * user.gpax;
+  }
+}
+
+class Ai_calculator {
+  Interpreter? _interpreter;
+
+  Ai_calculator();
+
+  Future<void> loadModel() async {
+    _interpreter = await Interpreter.fromAsset('assets/pulseleep_model2.tflite');
+  }
+
+  Future<double> predict(UserResponse user) async {
+    if (_interpreter == null) {
+      await loadModel();
+    }
+
+    var input = [user.toInputList()];  // รูปแบบ [1, feature_count]
+    var output = List.generate(1, (_) => List.filled(3, 0.0));
+
+    _interpreter!.run(input, output);
+
+    // หา index ที่ความน่าจะเป็นสูงสุด
+    int bestIndex = 0;
+    double maxProb = output[0][0];
+    for (int i = 1; i < 3; i++) {
+      if (output[0][i] > maxProb) {
+        maxProb = output[0][i];
+        bestIndex = i;
+      }
+    }
+
+    return bestIndex.toDouble();
+  }
+
+  void close() {
+    _interpreter?.close();
   }
 }
